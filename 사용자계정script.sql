@@ -22,3 +22,8 @@ GRANT RESOURCE, CONNECT TO kh;
 
 ALTER USER kh DEFAULT TABLESPACE SYSTEM QUOTA UNLIMITED ON SYSTEM;
 -- 객체가 생성할 수 있는 공간 할당량 무제한 지정
+
+
+SELECT * FROM all_tables
+ WHERE table_name = 'EMPLOYEE';
+
