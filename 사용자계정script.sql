@@ -13,7 +13,9 @@ ALTER SESSION SET "_ORACLE_SCRIPT" = TRUE;
 
 -- 계정 생성 구문 (username : kh / password: kh1234)
 CREATE USER kh IDENTIFIED BY kh1234;
-CREATE USER workbook IDENTIFIED BY workbook;
+CREATE USER workbook IDENTIFIED BY "workbook";
+
+DROP USER workbook;
 
 GRANT RESOURCE, CONNECT TO kh;
 GRANT RESOURCE, CONNECT TO workbook;
