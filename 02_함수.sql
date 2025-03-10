@@ -292,8 +292,8 @@ FROM EMPLOYEE ;
 --이름, 직급코드, 급여, 인상률, 인상된 급여를 조회
 
 SELECT EMP_NAME, JOB_CODE, SALARY,
-       DECODE(JOB_CODE, 'J7', 20, 'J6', 15, 'J5', 10, 5) AS 인상률, 
-       SALARY * (1 + DECODE(JOB_CODE, 'J7', 0.2, 'J6', 0.15, 'J5', 0.1, 0.05)) AS 인상된_급여
+       DECODE(JOB_CODE, 'J7', '20%', 'J6', '15%', 'J5', '10%', '5%') AS 인상률, 
+       DECODE(JOB_CODE, 'J7', SALARY * 1.2, 'J6', SALARY * 1.15,'J5', SALARY * 1.1, SALARY *1.05) AS 인상된_급여
 FROM EMPLOYEE;
 
 -- CASE WHEN 조건식 THEN 결과값
@@ -317,3 +317,57 @@ CASE WHEN SALARY >= 5000000 THEN '대' -- IF
 	   
 	   END "급여 받는 정도"
 	   FROM EMPLOYEE;
+
+------------------------------------
+
+-- 그룹 함수
+-- 하나 이상의 행을 그룹으로 묶어 연산하여 총합, 평균 등의
+-- 하나의 결과 행으로 반환하는 함수
+
+-- SUM(숫자가 기록된 컬럼명) : 합계
+-- 모든 직원의 급여 합 조회
+SELECT SUM(SALARY) FROM EMPLOYEE;  --70096240
+
+-- AVG(숫자가 기록된 컬럼명) : 평균
+-- 전 직원 급여 평균
+SELECT ROUND(AVG(SALARY)) FROM EMPLOYEE; --3047663
+
+-- 부서코드가 'D9'인 사원들의 급여 합, 평균
+SELECT SUM(SALARY), ROUND(AVG(SALARY)) -- 3번째 해석 
+FROM EMPLOYEE						--1번째 해석							
+WHERE DEPT_CODE = 'D9';  --2번째 해석
+--SUM) 17700000  AVG) 5900000
+
+
+-- MIN(컬럼명) : 최솟값
+-- MAX(컬럼명) : 최대값
+--> 타입 제한 없음(숫자 : 대/소, 날짜 : 과거/미래, 문자열: 문자 순서)
+
+-- 급여 최소값, 가장 빠른 입사일, 알파벳순서가 가장빠른 이메일 조회
+SELECT MIN(SALARY), MIN(HIRE_DATE), MIN(EMAIL)
+FROM EMPLOYEE;
+
+-- 급여 최대값, 가장 최근 입사일, 알파벳 순서가 가장 느린 이메일 조회
+SELECT MAX(SALARY), MAX(HIRE_DATE), MAX(EMAIL)
+FROM EMPLOYEE;
+
+
+--EMPLOYEE 테이블에서
+--급여를 가장 많이 받는 사원의
+--이름, 급여, 직급코드를 조회
+SELECT EMP_NAME, SALARY, JOB_CODE
+FROM EMPLOYEE
+WHERE SALARY = (SELECT MAX(SALARY) FROM EMPLOYEE);
+
+--서브 쿼리 + 그룹함
+SELECT MAX(SALARY) FROM EMPLOYEE;
+
+-- COUNT() : 행 개수를 헤아려서 반환
+-- COUNT(컬럼명) : NULL을 제외한 실제값이 기록된 행 개수를 리턴
+-- COUNT(*) : NULL을 포함한 전체 행 개수를 리턴
+-- COUNT([DISTINCT] 컬럼명) : 중복을 제거한 행 개수를 리턴
+
+SELECT COUNT(BONUS) FROM EMPLOYEE;
+SELECT COUNT(*) FROM EMPLOYEE;
+SELECT COUNT(DISTINCT JOB_CODE) FROM EMPLOYEE;
+
