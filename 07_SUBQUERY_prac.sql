@@ -180,3 +180,163 @@ WHERE DEPT_CODE IN (SELECT DEPT_CODE
 -- 본인이 소속된 직급의 평균 급여를 받고 있는 직원의
 -- 사번, 이름, 직급코드, 급여 조회
 -- 단, 급여와 급여 평균은 만원 단위로 조회 TRUNC(컬럼명, -4)
+
+
+
+----------------------------------------------
+
+-- 1. 전지연 사원이 속해있는 부서원들을 조회하시오 (단, 전지연은 제외)
+-- 사번, 사원명, 전화번호, 고용일, 부서명
+
+SELECT DEPT_TITLE
+FROM EMPLOYEE
+LEFT JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+WHERE EMP_NAME = '전지연';
+
+
+SELECT EMP_ID, EMP_NAME, PHONE, HIRE_DATE
+FROM EMPLOYEE 
+LEFT JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+WHERE DEPT_TITLE = (SELECT DEPT_TITLE
+										FROM EMPLOYEE
+										LEFT JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+										WHERE EMP_NAME = '전지연')
+AND EMP_NAME != '전지연';										
+
+
+-- 2. 고용일이 2000년도 이후인 사원들 중 급여가 가장 높은 사원의
+-- 사번, 사원명, 전화번호, 급여 ,직급명을 조회하시오
+
+SELECT MAX(SALARY) 
+FROM EMPLOYEE
+WHERE EXTRACT(YEAR FROM HIRE_DATE)  >= '2000';
+
+SELECT EMP_ID, EMP_NAME, PHONE, SALARY, JOB_NAME
+FROM EMPLOYEE
+JOIN JOB USING(JOB_CODE)
+LEFT JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+WHERE SALARY = (SELECT MAX(SALARY) 
+								FROM EMPLOYEE
+		  					WHERE EXTRACT(YEAR FROM HIRE_DATE)  >= '2000');
+
+-- 3. 노옹철 사원과 같은 부서, 같은 직급인 사원을 조회하시오. (단, 노옹철 사원은 제외)
+-- 사번, 이름, 부서코드, 직급코드, 부서명, 직급명
+
+SELECT DEPT_CODE, JOB_NAME 
+FROM EMPLOYEE 
+JOIN JOB USING (JOB_CODE)
+WHERE EMP_NAME = '노옹철';
+
+SELECT EMP_ID, EMP_NAME, DEPT_CODE, JOB_CODE, DEPT_TITLE, JOB_NAME
+FROM EMPLOYEE
+JOIN JOB USING(JOB_CODE)
+LEFT JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+WHERE (DEPT_CODE, JOB_NAME) IN (SELECT DEPT_CODE, JOB_NAME 
+																FROM EMPLOYEE 
+																JOIN JOB USING (JOB_CODE)
+																WHERE EMP_NAME = '노옹철')
+AND EMP_NAME != '노옹철';
+
+-- 4. 2000년도에 입사한 사원과 부서와 직급이 같은 사원을 조회하시오
+-- 사번, 이름, 부서코드, 직급코드, 고용일
+
+SELECT DEPT_CODE, JOB_CODE
+FROM EMPLOYEE 
+WHERE EXTRACT (YEAR FROM HIRE_DATE) = '2000';
+
+SELECT EMP_ID, EMP_NAME, DEPT_CODE, JOB_CODE, HIRE_DATE
+FROM EMPLOYEE
+WHERE (DEPT_CODE, JOB_CODE) IN (SELECT DEPT_CODE, JOB_CODE
+																FROM EMPLOYEE 
+																WHERE EXTRACT (YEAR FROM HIRE_DATE) = '2000');
+
+
+-- 5. 77년생 여자 사원과 동일한 부서이면서 동일한 사수를 가지고 있는 사원을 조회하시오
+-- 사번, 이름, 부서코드, 사수번호, 주민번호, 고용일
+
+
+SELECT EMP_NAME, DEPT_CODE, MANAGER_ID, EMP_NO
+FROM EMPLOYEE
+WHERE SUBSTR(EMP_NO,1,2) = '77'
+AND SUBSTR(EMP_NO,8,1) = '2'
+AND MANAGER_ID = '214';
+
+SELECT EMP_ID, EMP_NAME, DEPT_CODE, MANAGER_ID, EMP_NO, HIRE_DATE
+FROM EMPLOYEE MAIN
+WHERE (DEPT_CODE, MANAGER_ID, EMP_NO) = (SELECT DEPT_CODE, MANAGER_ID, EMP_NO
+																				 FROM EMPLOYEE SUB
+															   				 WHERE SUBSTR(EMP_NO,1,2) = '77'
+																 				 AND SUBSTR(EMP_NO,8,1) = '2'
+																 				 AND SUB.DEPT_CODE = MAIN.DEPT_CODE
+																 				 AND SUB.EMP_ID = MAIN.MANAGER_ID);
+
+SELECT EMP_ID, EMP_NAME, DEPT_TITLE, MANAGER_ID
+FROM EMPLOYEE MAIN
+LEFT JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+WHERE MANAGER_ID = (SELECT EMP_ID 
+									 	FROM EMPLOYEE SUB
+										WHERE SUB.EMP_ID = MAIN.MANAGER_ID);
+
+-- 6. 부서별 입사일이 가장 빠른 사원의 
+-- 사번, 이름, 부서명(NULL이면 '소속없음'), 직급명, 입사일을 조회하고
+-- 입사일이 빠른 순으로 조회하시오
+-- 단, 퇴사한 직원은 제외하고 조회
+
+
+SELECT EMP_ID, EMP_NAME, NVL(DEPT_TITLE, '소속없음'), JOB_NAME, HIRE_DATE
+FROM EMPLOYEE 
+JOIN JOB USING(JOB_CODE)
+LEFT JOIN DEPARTMENT ON(DEPT_CODE = DEPT_ID)
+WHERE HIRE_DATE IN (SELECT MIN(HIRE_DATE)
+										FROM EMPLOYEE 
+										GROUP BY DEPT_CODE)	
+AND ENT_YN = 'N'
+ORDER BY HIRE_DATE;
+-- 내가 쓴 오답. 퇴사자가 가장 빨리 나가서 정답이 나오지 않았음..
+-- 밑의 구문을 참고해서 다시 공부합시다
+-- 지피티 말로는 GROUP BY로 묶이지 않은 이유가 한 부서당 한 개의 결과를 
+-- 내는 단일값이라는데 아직 모르겠음!!
+
+
+SELECT EMP_ID, EMP_NAME, NVL(DEPT_TITLE, '소속없음'), 
+JOB_NAME, HIRE_DATE
+FROM EMPLOYEE MAIN
+JOIN JOB USING (JOB_CODE)
+LEFT JOIN DEPARTMENT ON (DEPT_CODE = DEPT_ID)
+WHERE HIRE_DATE = (SELECT MIN(HIRE_DATE)
+									FROM EMPLOYEE SUB
+									WHERE MAIN.DEPT_CODE  = SUB.DEPT_CODE
+									AND ENT_YN = 'N'
+									OR (SUB.DEPT_CODE IS NULL AND MAIN.DEPT_CODE IS NULL))
+ORDER BY HIRE_DATE;
+
+
+-- 7. 직급별 나이가 가장 어린 직원의
+-- 사번, 이름, 직급명, 나이, 보너스 포함 연봉을 조회하고
+-- 나이순으로 내림차순 정렬하세요
+-- 단 연봉은 달러 124,800,800 으로 출력되게 하세요
+
+SELECT JOB_CODE, TO_CHAR(EXTRACT(YEAR FROM SYSDATE)) - 
+('19' || SUBSTR(EMP_NO,1,2)) 나이
+FROM EMPLOYEE
+WHERE ROWNUM = 1
+GROUP BY JOB_CODE
+ORDER BY 나이 DESC;
+
+
+SELECT 
+
+FROM EMPLOYEE;
+
+SELECT SALARY * BONUS
+FROM EMPLOYEE
+WHERE 
+
+
+SELECT DEPT_CODE, DEPT_TITLE, CEIL(AVG(SALARY)) 평균급여
+			FROM EMPLOYEE 
+			LEFT JOIN DEPARTMENT ON(DEPT_CODE = DEPT_ID)
+			GROUP BY DEPT_CODE, DEPARTMENT.DEPT_TITLE 
+			ORDER BY 평균급여 DESC)
+
+WHERE ROWNUM <= 3;
