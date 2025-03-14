@@ -106,12 +106,139 @@ ALTER TABLE DEPT_COPY MODIFY LNAME DEFAULT 'KOREA';
 --> !! 기본값을 변경했다고 해서 기존 데이터가 변하지는 않는다!
 --> 앞으로 INSERT 될 데이터만 변경된 내용을 삽입됨
 
-INSERT INTO DEPT_COPY 
-VALUES ('D10', '개발1팀','L1', NULL, DEFAULT);
+
+--LNAME '한국' -> 'KOREA' 변경
+UPDATE DEPT_COPY SET LNAME = DEFAULT
+WHERE LNAME = '한국';
+
+COMMIT;
 
 
+SELECT * FROM DEPT_COPY;
 
+-- DEPT_COPY 모든 컬럼 삭제
+ALTER TABLE DEPT_COPY DROP (LNAME);
+ALTER TABLE DEPT_COPY DROP COLUMN CNAME;
+ALTER TABLE DEPT_COPY DROP COLUMN LOCATION_ID;
+ALTER TABLE DEPT_COPY DROP COLUMN DEPT_TITLE;
+ALTER TABLE DEPT_COPY DROP COLUMN DEPT_ID; --삭제 안됨
+-- ORA-12983: 테이블에 모든 열들을 삭제할 수 없습니다
 
+-- 컬럼 삭제 시 유의사항
+-- 테이블이란 행과 열로 이루어진 DB의 가장 기본적인 객체
+--> 테이블 최소 1개 이상의 컬럼이 존재해야하기 때문에
+-- 모든 컬럼을 다 삭제할 순 없다
 
+-- 테이블 삭제
+DROP TABLE DEPT_COPY; -- 테이블 삭제됨
+SELECT * FROM DEPT_COPY;
+-- ORA-00942: 테이블 또는 뷰가 존재하지 않습니다
 
+-- DEPARTMENT 테이블 복사해서 DEPT_COPY 생성
+CREATE TABLE DEPT_COPY 
+AS SELECT * FROM DEPARTMENT;
+-- AS 잊지말기!
+-- 컬럼명, 데이터타입, NOT NULL 여부만 복사
+
+-- DEPT_COPY 테이블에 PK 추가 (컬럼: DEPT_ID, 제약조건명 : D_COPY_PK)
+ALTER TABLE DEPT_COPY 
+ADD CONSTRAINT D_COPY_PK PRIMARY KEY(DEPT_ID); 
+
+-- 3. 이름변경(컬럼명, 테이블명, 제약조건명)
+
+-- 1) 컬럼명 변경 (DEPT_TITLE -> DEPT_NAME)
+ALTER TABLE DEPT_COPY 
+RENAME COLUMN DEPT_TITLE TO DEPT_NAME;
+
+-- 2) 제약조건명 변경 (D_COPY_PK -> DEPT_COPY_PK)
+ALTER TABLE DEPT_COPY
+RENAME CONSTRAINT D_COPY_PK TO DEPT_COPY_PK;
+
+-- 3) 테이블명 변경
+ALTER TABLE DEPT_COPY RENAME TO DCOPY;
+
+SELECT * FROM DEPT_COPY; -- 오류 (테이블명 변경했음)
+SELECT * FROM DCOPY;
+
+------------------------------------------------------
+
+-- 4. 테이블 삭제
+
+-- DROP TABLE 테이블명 [CASCADE CONSTRAINTS];
+
+-- 1) 관계가 형성되지 않은 테이블 삭제
+DROP TABLE DCOPY;
+
+-- 2) 관계가 형성된 테이블 삭제
+CREATE TABLE TB1(
+	TB1_PK NUMBER PRIMARY KEY, -- PK는 중복되서도 안되고 NULL이어서도 안됨
+	TB1_COL NUMBER
+); -- 부모 테이블
+
+CREATE TABLE TB2(
+	TB2_PK NUMBER PRIMARY KEY,
+	TB2_COL NUMBER REFERENCES TB1 -- FK 제약조건, 조건 걸 컬럼을 정하지 않으면 
+																-- 자동으로 부모테이블의 PRIMARY KEY 참조
+);
+
+-- TB1에 샘플 데이터 삽입
+
+INSERT INTO TB1 VALUES(1, 100);
+INSERT INTO TB1 VALUES(2, 200);
+INSERT INTO TB1 VALUES(3, 300);
+
+SELECT * FROM TB1;
+
+-- TB2에 샘플 데이터 삽입
+INSERT INTO TB2 VALUES(11, 1);
+INSERT INTO TB2 VALUES(12, 2);
+INSERT INTO TB2 VALUES(13, 3);
+
+SELECT * FROM TB2;
+
+COMMIT;
+
+-- TB1과 TB2는 부모-자식 테이블 관계 형성
+
+-- 부모인 TB1 테이블을 삭제하려고 할 때
+DROP TABLE TB1;
+-- ORA-02449: 외래 키에 의해 참조되는 고유/기본 키가 테이블에 있습니다
+--> 해결방법
+-- 1) 자식, 부모테이블 순서로 삭제
+-- 2) ALTER를 이용해서 FK 제약조건 삭제 후 TB1 삭제
+-- 3) DROP TABLE 삭제옵션 CASCADE CONSTRAINTS 사용
+--> CASCADE CONSTRAINTS : 삭제하려는 테이블과 연결된 FK 제약조건을 모두 삭제
+
+DROP TABLE TB1 CASCADE CONSTRAINTS; 
+-- 테이블 삭제시 FK 관계도 모두 삭제
+
+SELECT * FROM TB1; -- 삭제 확인됨
+SELECT * FROM TB2; -- TB2 테이블만 아무 관계 없이 남게 됨.
+
+---------------------------------------------------------
+
+/*DDL 주의 사항*/
+-- 1) DDL은 COMMIT/ROLLBACK이 되지 않는다.
+-- 2) DDL과 DML 구문 섞어서 수행하면 안된다.
+-- DDL(CREATE, ALTER, DROP : 객체 생성 / 수정/ 삭제)
+-- DML(INSERT, UPDATE, DELETE : 데이터(행) 추가 / 갱신 / 삭제)
+--> DDL은 수행 시 존재하고 있는 트랜잭션을 모두 DB에 강제 COMMIT 시킴
+--> DDL이 종료된 후에 DML 구문을 수행할 수 있도록 권장
+
+SELECT * FROM TB2;
+
+COMMIT;
+
+-- DML (INSERT)
+INSERT INTO TB2 VALUES(14, 4);
+INSERT INTO TB2 VALUES(15, 5);
+
+-- DDL (컬럼명 변경)
+ALTER TABLE TB2 RENAME COLUMN TB2_COL TO TB2_COLUMN;
+
+ROLLBACK;
+
+SELECT * FROM TB2;
+-- 롤백 안된다. 위에서 DDL 구문 중 ALTER를 사용해서
+-- 그 시점에 강제 COMMIT 되었기 때문에
 
