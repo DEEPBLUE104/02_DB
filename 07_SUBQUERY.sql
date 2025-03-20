@@ -27,11 +27,11 @@ WHERE DEPT_CODE = 'D9';
 -- 3) 부서코드가 노옹철 사원과 같은 소속의 직업 명단 조회
 --> 위의 2개의 단계를 하나의 쿼리로 병합
 
-SELECT EMP_NAME, DEPT_CODE
+SELECT EMP_NAME 이름, DEPT_CODE
 FROM EMPLOYEE
 WHERE DEPT_CODE = (SELECT DEPT_CODE 
 									 FROM EMPLOYEE
-									 WHERE EMP_NAME = '노옹철');
+									 WHERE 이름 = '노옹철');
 
 -- 서브쿼리 예시2.
 -- 전 직원의 평균 급여보다 많은 급여를 받고 있는 직원의
@@ -792,4 +792,3 @@ FROM EMPLOYEE;
 --19	전형돈	2000000
 --19	윤은해	2000000
 --20	박나라	1800000
-

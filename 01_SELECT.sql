@@ -337,6 +337,7 @@ ORDER BY 3 DESC;  -- 컬럼 순서 사용.
 -- 입사일 순서대로 이름, 입사일 조회(별칭 사용)
 SELECT EMP_NAME 이름, HIRE_DATE 입사일  -- 변수 (AS) 별칭 AS생략가능
 FROM EMPLOYEE 
+WHERE EMP_NAME = '선동일'
 ORDER BY 입사일;
 
 /*정렬 중첩 : 대분류 정렬 후 소분류 정렬*/
